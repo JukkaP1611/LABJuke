@@ -1,0 +1,164 @@
+@page "/trip/{TripId:int}"
+@using System.Net.Http.Json
+@using CyclingTripManagement.Models
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>@(trip?.Name ?? "Trip Details")</PageTitle>
+
+<div class="container mt-4">
+    @if (trip == null)
+    {
+        <p><em>Loading trip details...</em></p>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-lg-8">
+                <h1>@trip.Name</h1>
+                <p class="lead">
+                    <i class="bi bi-geo-alt"></i> @trip.Location
+                </p>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>Trip Overview</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>@trip.Description</p>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <h5>Trip Details</h5>
+                                <ul class="list-unstyled">
+                                    <li><strong>Start Date:</strong> @trip.StartDate.ToString("MMMM dd, yyyy")</li>
+                                    <li><strong>End Date:</strong> @trip.EndDate.ToString("MMMM dd, yyyy")</li>
+                                    <li><strong>Duration:</strong> @trip.DurationDays days</li>
+                                    <li><strong>Max Participants:</strong> @trip.MaxParticipants</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Cycling Details</h5>
+                                <ul class="list-unstyled">
+                                    <li><strong>Avg. Daily Distance:</strong> @trip.AverageDailyDistance km</li>
+                                    <li><strong>Avg. Vertical Meters:</strong> @trip.AverageDailyVerticalMeters m</li>
+                                    @if (!string.IsNullOrEmpty(trip.StravaRouteLink))
+                                    {
+                                        <li>
+                                            <a href="@trip.StravaRouteLink" target="_blank" class="btn btn-sm btn-outline-primary mt-2">
+                                                <i class="bi bi-link-45deg"></i> View on Strava
+                                            </a>
+                                        </li>
+                                    }
+                                    @if (!string.IsNullOrEmpty(trip.GpxFileUrl))
+                                    {
+                                        <li>
+                                            <a href="@trip.GpxFileUrl" target="_blank" class="btn btn-sm btn-outline-success mt-2">
+                                                <i class="bi bi-download"></i> Download GPX File
+                                            </a>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @if (trip.Hotels?.Any() == true)
+                {
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h3>Accommodation</h3>
+                        </div>
+                        <div class="card-body">
+                            @foreach (var hotel in trip.Hotels.OrderBy(h => h.NightNumber))
+                            {
+                                <div class="hotel-info mb-3">
+                                    <h5>Night @hotel.NightNumber: @hotel.Name</h5>
+                                    <p class="mb-1">@hotel.Address</p>
+                                    @if (!string.IsNullOrEmpty(hotel.City))
+                                    {
+                                        <p class="mb-1">@hotel.City, @hotel.Country</p>
+                                    }
+                                    @if (!string.IsNullOrEmpty(hotel.Website))
+                                    {
+                                        <a href="@hotel.Website" target="_blank" class="btn btn-sm btn-link p-0">Visit Website</a>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card sticky-top" style="top: 20px;">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Pricing & Registration</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="pricing mb-3">
+                            <h5>Base Price (Twin Room)</h5>
+                            <p class="h2 text-primary">€@trip.BasePrice</p>
+                            
+                            <h5 class="mt-3">Single Room Supplement</h5>
+                            <p class="h4">+ €@trip.SingleRoomSupplement</p>
+                        </div>
+                        
+                        <hr />
+                        
+                        <div class="included mb-3">
+                            <h5>What's Included</h5>
+                            <ul>
+                                <li>@trip.DurationDays nights accommodation</li>
+                                <li>Daily breakfast</li>
+                                <li>Route planning & GPX files</li>
+                                <li>Support vehicle</li>
+                                <li>Experienced tour guide</li>
+                            </ul>
+                        </div>
+                        
+                        <button class="btn btn-primary btn-lg w-100" @onclick="NavigateToRegistration">
+                            Register for This Trip
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .sticky-top {
+        position: sticky;
+    }
+    
+    .hotel-info {
+        border-left: 3px solid #667eea;
+        padding-left: 1rem;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public int TripId { get; set; }
+
+    private Trip? trip;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            trip = await Http.GetFromJsonAsync<Trip>($"api/trips/{TripId}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading trip: {ex.Message}");
+        }
+    }
+
+    private void NavigateToRegistration()
+    {
+        Navigation.NavigateTo($"/register/{TripId}");
+    }
+}

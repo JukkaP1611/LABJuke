@@ -1,0 +1,127 @@
+@page "/trips"
+@using System.Net.Http.Json
+@using CyclingTripManagement.Models
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>All Trips - Adventure Partners</PageTitle>
+
+<div class="container mt-4">
+    <h1>Available Cycling Trips</h1>
+    <p class="lead">Browse all our upcoming cycling adventures across Europe</p>
+
+    @if (trips == null)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading trips...</p>
+        </div>
+    }
+    else if (trips.Count == 0)
+    {
+        <div class="alert alert-info">
+            <h4>No trips currently available</h4>
+            <p>Please check back soon for new cycling adventures!</p>
+        </div>
+    }
+    else
+    {
+        <div class="row mt-4">
+            @foreach (var trip in trips)
+            {
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 trip-card">
+                        <div class="card-body">
+                            <h3 class="card-title">@trip.Name</h3>
+                            <p class="text-muted mb-2">
+                                <i class="bi bi-geo-alt"></i> @trip.Location
+                            </p>
+                            <p class="text-muted mb-3">
+                                <i class="bi bi-calendar3"></i> @trip.StartDate.ToString("MMM dd") - @trip.EndDate.ToString("MMM dd, yyyy")
+                            </p>
+                            
+                            <div class="trip-stats">
+                                <div class="stat">
+                                    <i class="bi bi-clock"></i>
+                                    <span>@trip.DurationDays days</span>
+                                </div>
+                                <div class="stat">
+                                    <i class="bi bi-bicycle"></i>
+                                    <span>@trip.AverageDailyDistance km/day</span>
+                                </div>
+                                <div class="stat">
+                                    <i class="bi bi-arrow-up-circle"></i>
+                                    <span>@trip.AverageDailyVerticalMeters m/day</span>
+                                </div>
+                            </div>
+                            
+                            <p class="price-badge mt-3">From €@trip.BasePrice</p>
+                        </div>
+                        <div class="card-footer">
+                            <button class="btn btn-primary w-100" @onclick="() => ViewTrip(trip.Id)">
+                                View Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .trip-card {
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .trip-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+
+    .trip-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .trip-stats .stat {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .price-badge {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #667eea;
+        margin: 0;
+    }
+</style>
+
+@code {
+    private List<Trip>? trips;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            trips = await Http.GetFromJsonAsync<List<Trip>>("api/trips") ?? new List<Trip>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading trips: {ex.Message}");
+            trips = new List<Trip>();
+        }
+    }
+
+    private void ViewTrip(int tripId)
+    {
+        Navigation.NavigateTo($"/trip/{tripId}");
+    }
+}
