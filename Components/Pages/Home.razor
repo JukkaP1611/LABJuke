@@ -1,0 +1,125 @@
+﻿@page "/"
+@using System.Net.Http.Json
+@using CyclingTripManagement.Models
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Adventure Partners - Cycling Trips</PageTitle>
+
+<div class="hero-section">
+    <div class="hero-content">
+        <h1>Adventure Partners Cycling Trips</h1>
+        <p class="lead">Experience the thrill of cycling through the majestic Alps</p>
+        <p>Join us for unforgettable 4-7 day cycling adventures across Europe's most spectacular mountain ranges</p>
+    </div>
+</div>
+
+<div class="container mt-5">
+    <h2 class="mb-4">Upcoming Trips</h2>
+
+    @if (trips == null)
+    {
+        <p><em>Loading trips...</em></p>
+    }
+    else if (trips.Count == 0)
+    {
+        <div class="alert alert-info">
+            <p>No trips currently available. Please check back soon!</p>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var trip in trips)
+            {
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 trip-card">
+                        <div class="card-body">
+                            <h3 class="card-title">@trip.Name</h3>
+                            <p class="text-muted">
+                                <i class="bi bi-geo-alt"></i> @trip.Location
+                            </p>
+                            <p class="card-text">@trip.Description.Substring(0, Math.Min(150, trip.Description.Length))...</p>
+                            
+                            <div class="trip-details mt-3">
+                                <p><strong><i class="bi bi-calendar3"></i> Duration:</strong> @trip.DurationDays days</p>
+                                <p><strong><i class="bi bi-bicycle"></i> Avg. Distance:</strong> @trip.AverageDailyDistance km/day</p>
+                                <p><strong><i class="bi bi-arrow-up"></i> Vertical:</strong> @trip.AverageDailyVerticalMeters m/day</p>
+                                <p class="price-info"><strong><i class="bi bi-tag"></i> From:</strong> €@trip.BasePrice</p>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <button class="btn btn-primary w-100" @onclick="() => ViewTrip(trip.Id)">
+                                View Details & Register
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 4rem 2rem;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .hero-content h1 {
+        font-size: 3rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+    }
+
+    .hero-content .lead {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .trip-card {
+        transition: transform 0.2s;
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .trip-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .trip-details p {
+        margin-bottom: 0.5rem;
+    }
+
+    .price-info {
+        font-size: 1.2rem;
+        color: #667eea;
+        font-weight: bold;
+    }
+</style>
+
+@code {
+    private List<Trip>? trips;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            trips = await Http.GetFromJsonAsync<List<Trip>>("api/trips") ?? new List<Trip>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading trips: {ex.Message}");
+            trips = new List<Trip>();
+        }
+    }
+
+    private void ViewTrip(int tripId)
+    {
+        Navigation.NavigateTo($"/trip/{tripId}");
+    }
+}
